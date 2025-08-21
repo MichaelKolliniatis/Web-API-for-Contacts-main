@@ -9,7 +9,7 @@
         public string? Phone { get; set; }
         public int? CountryId { get; set; }
         public int? ProfessionId { get; set; }
-        public List<int> HobbyIds { get; set; } = new();
+        public List<int> HobbyIds { get; set; } = [];
 
     }
 }
