@@ -238,7 +238,7 @@ public class PersonController(ContactsDbContext context, IMapper mapper) : Contr
         _context.Persons.Remove(person);
         await _context.SaveChangesAsync();
 
-        return Ok(new { message = $"'{person.FirstName} {person.LastName}' deleted successfully." });
+        return NoContent();
     }
 
 }

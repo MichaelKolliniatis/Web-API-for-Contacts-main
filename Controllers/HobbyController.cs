@@ -87,7 +87,7 @@ namespace Web_API_for_Contacts_2._0.Controllers
             _context.Hobbies.Remove(hobby);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = $"'{hobby.Name}' deleted successfully." });
+            return NoContent();
         }
 
 

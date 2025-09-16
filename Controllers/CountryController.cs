@@ -90,7 +90,7 @@ namespace Web_API_for_Contacts_2._0.Controllers
             _context.Countries.Remove(country);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = $"'{country.Name}' deleted successfully." });
+            return NoContent();
         }
 
 
