@@ -9,7 +9,8 @@ namespace Web_API_for_Contacts_2._0.Profiles
         public CountryProfile()
         {
 
-        CreateMap<CreateUpdateDeleteCountryDto, Country>();
+            CreateMap<CreateUpdateCountryDto, Country>();
+            CreateMap<Country, IdNameDto>();
         
         }
     }

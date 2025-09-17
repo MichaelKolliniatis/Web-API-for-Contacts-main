@@ -33,7 +33,7 @@ namespace Web_API_for_Contacts_2._0.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateProfession([FromBody] CreateUpdateDeleteProfessionDto input)
+        public async Task<ActionResult> CreateProfession([FromBody] CreateUpdateProfessionDto input)
         {
             var existingProfession = await _context.Professions
                 .AnyAsync(c => c.Name.ToLower() == input.Name.ToLower());
@@ -50,7 +50,7 @@ namespace Web_API_for_Contacts_2._0.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateProfession(int id, [FromBody] CreateUpdateDeleteProfessionDto input)
+        public async Task<ActionResult> UpdateProfession(int id, [FromBody] CreateUpdateProfessionDto input)
         {
             var profession = await _context.Professions.FindAsync(id);
 

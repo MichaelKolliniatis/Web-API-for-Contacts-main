@@ -9,7 +9,11 @@ namespace Web_API_for_Contacts_2._0.Profiles
         public HobbyProfile()
         {
 
-            CreateMap<CreateUpdateDeleteHobbyDto, Hobby>();
+            CreateMap<CreateUpdateHobbyDto, Hobby>();
+            CreateMap<Hobby, IdNameDto>();
+            CreateMap<PersonHobby, IdNameDto>()
+                .ForMember(d => d.Id, o => o.MapFrom(s => s.HobbyId))
+                .ForMember(d => d.Name, o => o.MapFrom(s => s.Hobby!.Name));
 
         }
     }

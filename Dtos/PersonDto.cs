@@ -7,9 +7,10 @@
         public string LastName { get; set; } = null!;
         public string? Email { get; set; }
         public string? Phone { get; set; }
-        public int? CountryId { get; set; }
-        public int? ProfessionId { get; set; }
-        public List<int> HobbyIds { get; set; } = [];
+
+        public IdNameDto? Country { get; set; }
+        public IdNameDto? Profession { get; set; }
+        public List<IdNameDto> Hobbies { get; set; } = [];
 
     }
 }

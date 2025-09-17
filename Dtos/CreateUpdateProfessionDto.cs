@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-public class CreateUpdateDeleteProfessionDto
+public class CreateUpdateProfessionDto
 {
     [Required(AllowEmptyStrings = false, ErrorMessage = "Name of the profession is missing.")]
     [MaxLength(100, ErrorMessage = "Name cannot have more than 100 characters.")]

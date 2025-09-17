@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-public class CreateUpdateDeleteHobbyDto
+public class CreateUpdateHobbyDto
 {
     [Required(AllowEmptyStrings = false, ErrorMessage = "Name of the hobby is missing.")]
     [MaxLength(100, ErrorMessage = "Name cannot have more than 100 characters.")]

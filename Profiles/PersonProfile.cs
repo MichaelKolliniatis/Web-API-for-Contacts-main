@@ -9,14 +9,9 @@ namespace Web_API_for_Contacts_2._0.Profiles
         public PersonProfile()
         {
             CreateMap<Person, PersonDto>()
-            .ForMember(dest => dest.HobbyIds,
-                opt => opt.MapFrom(src =>
-                    src.PersonHobbies != null
-                        ? src.PersonHobbies
-                            .Where(ph => ph.Hobby != null)
-                            .Select(ph => ph.HobbyId)
-                            .ToList()
-                    : new List<int>()));
+                .ForMember(d => d.Country, o => o.MapFrom(s => s.Country))
+                .ForMember(d => d.Profession, o => o.MapFrom(s => s.Profession))
+                .ForMember(d => d.Hobbies, o => o.MapFrom(s => s.PersonHobbies));
         }
     }
 }

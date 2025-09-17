@@ -25,30 +25,6 @@ public class PersonController(ContactsDbContext context, IMapper mapper) : Contr
     {
         var validationErrors = new List<string>();
 
-        //if (countryId.HasValue)
-        //{
-        //    var exists = await _context.Countries.AnyAsync(c => c.Id == countryId.Value);
-        //    if (!exists)
-        //        validationErrors.Add($"No country found with ID = {countryId}");
-        //}
-
-        //if (professionId.HasValue)
-        //{
-        //    var exists = await _context.Professions.AnyAsync(p => p.Id == professionId.Value);
-        //    if (!exists)
-        //        validationErrors.Add($"No profession found with ID = {professionId}");
-        //}
-
-        //if (hobbyId.HasValue)
-        //{
-        //    var exists = await _context.Hobbies.AnyAsync(h => h.Id == hobbyId.Value);
-        //    if (!exists)
-        //        validationErrors.Add($"No hobby found with ID = {hobbyId}");
-        //}
-
-        //if (validationErrors.Any())
-        //    return NotFound(new { messages = validationErrors });
-
         var query = _context.Persons.AsQueryable();
 
         if (countryId.HasValue)

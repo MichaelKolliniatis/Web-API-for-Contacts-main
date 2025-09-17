@@ -35,7 +35,7 @@ namespace Web_API_for_Contacts_2._0.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateCountry([FromBody] CreateUpdateDeleteCountryDto input)
+        public async Task<ActionResult> CreateCountry([FromBody] CreateUpdateCountryDto input)
         {
             var existingCountry = await _context.Countries
                 .AnyAsync(c => c.Name.ToLower() == input.Name.ToLower());
@@ -52,7 +52,7 @@ namespace Web_API_for_Contacts_2._0.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateCountry(int id, [FromBody] CreateUpdateDeleteCountryDto input)
+        public async Task<ActionResult> UpdateCountry(int id, [FromBody] CreateUpdateCountryDto input)
         {
             var country = await _context.Countries.FindAsync(id);
 

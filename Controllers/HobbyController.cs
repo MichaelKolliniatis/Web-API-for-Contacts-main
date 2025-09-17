@@ -33,7 +33,7 @@ namespace Web_API_for_Contacts_2._0.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateHobby([FromBody] CreateUpdateDeleteHobbyDto input)
+        public async Task<ActionResult> CreateHobby([FromBody] CreateUpdateHobbyDto input)
         {
             var existingHobby = await _context.Hobbies
                 .AnyAsync(c => c.Name.ToLower() == input.Name.ToLower());
@@ -50,7 +50,7 @@ namespace Web_API_for_Contacts_2._0.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateHobby(int id, [FromBody] CreateUpdateDeleteHobbyDto input)
+        public async Task<ActionResult> UpdateHobby(int id, [FromBody] CreateUpdateHobbyDto input)
         {
             var hobby = await _context.Hobbies.FindAsync(id);
 

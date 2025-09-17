@@ -9,7 +9,8 @@ namespace Web_API_for_Contacts_2._0.Profiles
         public ProfessionProfile()
         {
 
-            CreateMap<CreateUpdateDeleteProfessionDto, Profession>();
+            CreateMap<CreateUpdateProfessionDto, Profession>();
+            CreateMap<Profession, IdNameDto>();
 
         }
     }
