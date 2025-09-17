@@ -221,19 +221,19 @@ public class PersonController(ContactsDbContext context, IMapper mapper) : Contr
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeletePerson(int id, [FromBody] DeletePersonDto input)
+    public async Task<IActionResult> DeletePerson(int id)
     {
-        var person = await _context.Persons
-            .Include(p => p.PersonHobbies)
-            .FirstOrDefaultAsync(p => p.Id == id &&
-                                      p.FirstName.ToLower() == input.FirstName.ToLower() &&
-                                      p.LastName.ToLower() == input.LastName.ToLower());
+        var person = await _context.Persons.FindAsync(id);
 
         if (person == null)
-            return NotFound(new { message = $"No person found with Id {id} and name {input.FirstName} {input.LastName}." });
+            return NotFound(new { message = $"No person found with Id {id}." });
 
-        if (person.PersonHobbies.Any())
-            _context.PersonHobbies.RemoveRange(person.PersonHobbies);
+        //if (person.PersonHobbies.Any())
+        //    _context.PersonHobbies.RemoveRange(person.PersonHobbies);
+
+        var deletedHobbies = await _context.PersonHobbies
+            .Where(h => h.PersonId == id)
+            .ExecuteDeleteAsync();
 
         _context.Persons.Remove(person);
         await _context.SaveChangesAsync();

@@ -71,18 +71,18 @@ namespace Web_API_for_Contacts_2._0.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteProfession(int id, [FromBody] CreateUpdateDeleteProfessionDto input)
+        public async Task<IActionResult> DeleteProfession(int id)
         {
             var profession = await _context.Professions.FindAsync(id);
 
-            if (profession == null || profession.Name != input.Name)
-                return NotFound(new { message = $"No profession with Id {id} and Name '{input.Name}'." });
+            if (profession == null)
+                return NotFound(new { message = $"No profession with Id {id}." });
 
             var personWithProfession = await _context.Persons
                 .AnyAsync(p => p.ProfessionId == id);
 
             if (personWithProfession)
-                return Conflict(new { message = $"Cannot delete the profession '{input.Name}' because there is at least one person associated with it." });
+                return Conflict(new { message = $"Cannot delete the profession '{profession.Name}' because there is at least one person associated with it." });
 
             _context.Professions.Remove(profession);
             await _context.SaveChangesAsync();

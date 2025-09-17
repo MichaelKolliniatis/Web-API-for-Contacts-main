@@ -76,10 +76,9 @@ namespace Web_API_for_Contacts_2._0.Controllers
         public async Task<IActionResult> DeleteCountry(int id)
         {
             var country = await _context.Countries.FindAsync(id);
+
             if (country is null)
-            {
-                return NotFound(new { message = "" });
-            }
+                return NotFound(new { message = $"No country with Id {id}." });
 
             var personWithCountry = await _context.Persons
                 .AnyAsync(p => p.CountryId == id);
