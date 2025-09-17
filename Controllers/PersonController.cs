@@ -204,9 +204,6 @@ public class PersonController(ContactsDbContext context, IMapper mapper) : Contr
         if (person == null)
             return NotFound(new { message = $"No person found with Id {id}." });
 
-        //if (person.PersonHobbies.Any())
-        //    _context.PersonHobbies.RemoveRange(person.PersonHobbies);
-
         var deletedHobbies = await _context.PersonHobbies
             .Where(h => h.PersonId == id)
             .ExecuteDeleteAsync();

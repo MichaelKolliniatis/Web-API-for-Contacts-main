@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Web_API_for_Contacts_2._0.Data;
+using Web_API_for_Contacts_2._0.Dtos;
 using Web_API_for_Contacts_2._0.Models;
 
 namespace Web_API_for_Contacts_2._0.Controllers
@@ -16,15 +18,24 @@ namespace Web_API_for_Contacts_2._0.Controllers
         private readonly IMapper _mapper = mapper;
 
         [HttpGet]
-        public async Task<ActionResult<List<Profession>>> GetProfessions()
+        public async Task<ActionResult<List<IdNameDto>>> GetProfessions()
         {
-            return Ok(await _context.Professions.ToListAsync());
+            var professions = await _context.Professions
+                .AsNoTracking()
+                .ProjectTo<IdNameDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return Ok(professions);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Profession>> GetProfessionById(int id)
+        public async Task<ActionResult<IdNameDto>> GetProfessionById(int id)
         {
-            var profession = await _context.Professions.FindAsync(id);
+            var profession= await _context.Professions
+                .AsNoTracking()
+                .Where(p => p.Id == id)
+                .ProjectTo<IdNameDto>(_mapper.ConfigurationProvider)
+                .SingleOrDefaultAsync();
 
             if (profession == null)
                 return NotFound(new { message = $"There is no profession with id {id}" });
@@ -42,11 +53,12 @@ namespace Web_API_for_Contacts_2._0.Controllers
                 return Conflict(new { message = $"{input.Name} already exists." });
 
             var newProfession = _mapper.Map<Profession>(input);
-
             _context.Professions.Add(newProfession);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetProfessionById), new {id = newProfession.Id}, newProfession);
+            var dto = _mapper.Map<IdNameDto>(newProfession);
+
+            return CreatedAtAction(nameof(GetProfessionById), new {id = newProfession.Id}, dto);
         }
 
         [HttpPut("{id}")]

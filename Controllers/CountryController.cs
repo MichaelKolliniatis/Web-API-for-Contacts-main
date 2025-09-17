@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,15 +19,24 @@ namespace Web_API_for_Contacts_2._0.Controllers
         private readonly IMapper _mapper = mapper;
 
         [HttpGet]
-        public async Task<ActionResult<List<Country>>> GetCountries()
+        public async Task<ActionResult<List<IdNameDto>>> GetCountries()
         {
-            return Ok(await _context.Countries.ToListAsync());
+            var countries = await _context.Countries
+                .AsNoTracking()
+                .ProjectTo<IdNameDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return Ok(countries);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Country>> GetCountryById(int id)
+        public async Task<ActionResult<IdNameDto>> GetCountryById(int id)
         {
-            var country = await _context.Countries.FindAsync(id);
+            var country = await _context.Countries
+                .AsNoTracking()
+                .Where(c => c.Id == id)
+                .ProjectTo<IdNameDto>(_mapper.ConfigurationProvider)
+                .SingleOrDefaultAsync();
 
             if (country == null)
                 return NotFound(new { message = $"There is no country with id {id}" });
@@ -44,11 +54,12 @@ namespace Web_API_for_Contacts_2._0.Controllers
                 return Conflict(new { message = $"'{input.Name}' already exists." });
 
             var newCountry = _mapper.Map<Country>(input);
-
             _context.Countries.Add(newCountry);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetCountryById), new { id = newCountry.Id }, newCountry);
+            var dto = _mapper.Map<IdNameDto>(newCountry);
+
+            return CreatedAtAction(nameof(GetCountryById), new { id = newCountry.Id }, dto);
         }
 
         [HttpPut("{id}")]

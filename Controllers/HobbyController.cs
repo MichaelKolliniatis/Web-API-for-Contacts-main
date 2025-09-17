@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using AutoMapper;
 using Web_API_for_Contacts_2._0.Data;
 using Web_API_for_Contacts_2._0.Models;
+using Web_API_for_Contacts_2._0.Dtos;
+using AutoMapper.QueryableExtensions;
 
 namespace Web_API_for_Contacts_2._0.Controllers
 {
@@ -16,15 +18,24 @@ namespace Web_API_for_Contacts_2._0.Controllers
         private readonly IMapper _mapper = mapper;
 
         [HttpGet]
-        public async Task<ActionResult<List<Hobby>>> GetHobbies()
+        public async Task<ActionResult<List<IdNameDto>>> GetHobbies()
         {
-            return Ok(await _context.Hobbies.ToListAsync());
+            var hobbies = await _context.Countries
+                .AsNoTracking()
+                .ProjectTo<IdNameDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return Ok(hobbies);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Country>> GetHobbyById(int id)
+        public async Task<ActionResult<IdNameDto>> GetHobbyById(int id)
         {
-            var hobby = await _context.Hobbies.FindAsync(id);
+            var hobby = await _context.Hobbies
+                .AsNoTracking()
+                .Where(h => h.Id == id)
+                .ProjectTo<IdNameDto>(_mapper.ConfigurationProvider)
+                .SingleOrDefaultAsync();
 
             if (hobby == null)
                 return NotFound(new { message = $"There is no hobby with id {id}" });
@@ -42,11 +53,12 @@ namespace Web_API_for_Contacts_2._0.Controllers
                 return Conflict(new { message = $"{input.Name} already exists." });
 
             var newHobby = _mapper.Map<Hobby>(input);
-
             _context.Hobbies.Add(newHobby);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetHobbyById), new {id = newHobby.Id}, newHobby);
+            var dto = _mapper.Map<IdNameDto>(newHobby);
+
+            return CreatedAtAction(nameof(GetHobbyById), new {id = newHobby.Id}, dto);
         }
 
         [HttpPut("{id}")]
