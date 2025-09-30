@@ -20,7 +20,7 @@ namespace Web_API_for_Contacts_2._0.Controllers
         [HttpGet]
         public async Task<ActionResult<List<IdNameDto>>> GetHobbies()
         {
-            var hobbies = await _context.Countries
+            var hobbies = await _context.Hobbies
                 .AsNoTracking()
                 .ProjectTo<IdNameDto>(_mapper.ConfigurationProvider)
                 .ToListAsync();
@@ -101,7 +101,5 @@ namespace Web_API_for_Contacts_2._0.Controllers
 
             return NoContent();
         }
-
-
     }
 }

@@ -102,7 +102,5 @@ namespace Web_API_for_Contacts_2._0.Controllers
 
             return NoContent();
         }
-
-
     }
 }
