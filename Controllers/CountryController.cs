@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.Metrics;
 using Web_API_for_Contacts_2._0.Data;
+using Web_API_for_Contacts_2._0.Data.Repositories;
 using Web_API_for_Contacts_2._0.Dtos;
 using Web_API_for_Contacts_2._0.Models;
 
@@ -12,21 +13,32 @@ namespace Web_API_for_Contacts_2._0.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CountryController(ContactsDbContext context, IMapper mapper) : ControllerBase
+    public class CountryController(
+        IGenericRepository<Country> repo,
+        IUnitOfWork uow,
+        ContactsDbContext context, 
+        IMapper mapper) : ControllerBase
     {
 
+        private readonly IGenericRepository<Country> _repo = repo;
+        private readonly IUnitOfWork _uow = uow;
         private readonly ContactsDbContext _context = context;
         private readonly IMapper _mapper = mapper;
 
         [HttpGet]
-        public async Task<ActionResult<List<IdNameDto>>> GetCountries()
+        public async Task<ActionResult<List<IdNameDto>>> GetCountries(CancellationToken ct)
         {
-            var countries = await _context.Countries
-                .AsNoTracking()
-                .ProjectTo<IdNameDto>(_mapper.ConfigurationProvider)
-                .ToListAsync();
 
-            return Ok(countries);
+            var entities = await _repo.GetAllAsync(asNoTracking: true, ct);
+            var dtos = _mapper.Map<List<IdNameDto>>(entities);
+            return Ok(dtos);
+
+            //var countries = await _context.Countries
+            //    .AsNoTracking()
+            //    .ProjectTo<IdNameDto>(_mapper.ConfigurationProvider)
+            //    .ToListAsync();
+
+            //return Ok(countries);
         }
 
         [HttpGet("{id}")]
