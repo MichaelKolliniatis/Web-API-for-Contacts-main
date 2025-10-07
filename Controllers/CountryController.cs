@@ -28,32 +28,18 @@ namespace Web_API_for_Contacts_2._0.Controllers
         [HttpGet]
         public async Task<ActionResult<List<IdNameDto>>> GetCountries(CancellationToken ct)
         {
-
-            var entities = await _repo.GetAllAsync(asNoTracking: true, ct);
-            var dtos = _mapper.Map<List<IdNameDto>>(entities);
+            var dtos = await _repo.GetAllProjectedAsync<IdNameDto>(_mapper.ConfigurationProvider, ct: ct);
             return Ok(dtos);
-
-            //var countries = await _context.Countries
-            //    .AsNoTracking()
-            //    .ProjectTo<IdNameDto>(_mapper.ConfigurationProvider)
-            //    .ToListAsync();
-
-            //return Ok(countries);
         }
-
+        
         [HttpGet("{id}")]
-        public async Task<ActionResult<IdNameDto>> GetCountryById(int id)
+        public async Task<ActionResult<IdNameDto>> GetCountryById(int id, CancellationToken ct)
         {
-            var country = await _context.Countries
-                .AsNoTracking()
-                .Where(c => c.Id == id)
-                .ProjectTo<IdNameDto>(_mapper.ConfigurationProvider)
-                .SingleOrDefaultAsync();
-
-            if (country == null)
+            var dto = await _repo.GetByIdProjectedAsync<IdNameDto>(id, _mapper.ConfigurationProvider, ct);
+            if (dto == null)
                 return NotFound(new { message = $"There is no country with id {id}" });
 
-            return Ok(country);
+            return Ok(dto);
         }
 
         [HttpPost]

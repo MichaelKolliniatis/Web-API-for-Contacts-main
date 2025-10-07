@@ -1,4 +1,6 @@
 ﻿using System.Linq.Expressions;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Web_API_for_Contacts_2._0.Data.Repositories
@@ -14,19 +16,44 @@ namespace Web_API_for_Contacts_2._0.Data.Repositories
             _set = context.Set<T>();
         }
 
-        public async Task<List<T>> GetAllAsync(bool asNoTracking = true, CancellationToken ct = default)
+        //public async Task<List<T>> GetAllAsync(bool asNoTracking = true, CancellationToken ct = default)
+        //{
+        //    var q = asNoTracking ? _set.AsNoTracking() : _set;
+        //    return await q.ToListAsync(ct);
+        //}
+
+        public async Task<List<TResult>> GetAllProjectedAsync<TResult>(
+            AutoMapper.IConfigurationProvider mapperConfig,
+            bool asNoTracking = true,
+            CancellationToken ct = default)
         {
-            var q = asNoTracking ? _set.AsNoTracking() : _set;
-            return await q.ToListAsync(ct);
+            IQueryable<T> q = _set;
+            if (asNoTracking) q = q.AsNoTracking();
+
+            return await q.ProjectTo<TResult>(mapperConfig).ToListAsync(ct);
         }
 
-        public async Task<T?> GetByIdAsync(int id, bool asNoTracking = true, CancellationToken ct = default)
+        //public async Task<T?> GetByIdAsync(int id, bool asNoTracking = true, CancellationToken ct = default)
+        //{
+        //    // Fast path (single int key)
+        //    var entity = await _set.FindAsync([id], ct);
+        //    if (entity is null) return null;
+        //    if (asNoTracking) _context.Entry(entity).State = EntityState.Detached;
+        //    return entity;
+        //}
+
+        public async Task<TResult?> GetByIdProjectedAsync<TResult>(
+            int id,
+            AutoMapper.IConfigurationProvider mapperConfig,
+            CancellationToken ct = default)
         {
-            // Fast path (single int key)
-            var entity = await _set.FindAsync([id], ct);
-            if (entity is null) return null;
-            if (asNoTracking) _context.Entry(entity).State = EntityState.Detached;
-            return entity;
+            var dto = await _set
+                .AsNoTracking()
+                .Where(e => EF.Property<int>(e, "Id") == id)
+                .ProjectTo<TResult>(mapperConfig)
+                .SingleOrDefaultAsync(ct);
+
+            return dto;
         }
 
         public async Task AddAsync(T entity, CancellationToken ct = default)
@@ -46,11 +73,11 @@ namespace Web_API_for_Contacts_2._0.Data.Repositories
             return Task.CompletedTask;
         }
 
-        public async Task DeleteByIdAsync(int id, CancellationToken ct = default)
-        {
-            var entity = await GetByIdAsync(id, asNoTracking: false, ct);
-            if (entity is not null) _set.Remove(entity);
-        }
+        //public async Task DeleteByIdAsync(int id, CancellationToken ct = default)
+        //{
+        //    var entity = await GetByIdAsync(id, asNoTracking: false, ct);
+        //    if (entity is not null) _set.Remove(entity);
+        //}
 
         public Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default)
         {
