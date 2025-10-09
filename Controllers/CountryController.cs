@@ -81,22 +81,20 @@ namespace Web_API_for_Contacts_2._0.Controllers
             return Ok(new { message = $"Country updated successfully with name '{input.Name}'" });
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCountry(int id)
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> DeleteCountry(int id, CancellationToken ct)
         {
-            var country = await _context.Countries.FindAsync(id);
-
-            if (country is null)
+            var exists = await _repo.ExistsAsync(c => c.Id == id, ct);
+            if (!exists)
                 return NotFound(new { message = $"No country with Id {id}." });
 
             var personWithCountry = await _context.Persons
-                .AnyAsync(p => p.CountryId == id);
-
+                .AnyAsync(p => p.CountryId == id, ct);
             if (personWithCountry)
-                return Conflict(new { message = $"Cannot delete the country '{country.Name}' because there is at least one person associated with it." });
+                return Conflict(new { message = $"Cannot delete the country with Id {id} because there is at least one person associated with it." });
 
-            _context.Countries.Remove(country);
-            await _context.SaveChangesAsync();
+            await _repo.DeleteByIdAsync(id, ct);
+            await _context.SaveChangesAsync(ct);
 
             return NoContent();
         }
