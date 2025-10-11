@@ -35,7 +35,6 @@ namespace Web_API_for_Contacts_2._0.Data.Repositories
 
         public async Task<T?> GetByIdAsync(int id, bool asNoTracking = true, CancellationToken ct = default)
         {
-            // Fast path (single int key)
             var entity = await _set.FindAsync([id], ct);
             if (entity is null) return null;
             if (asNoTracking) _context.Entry(entity).State = EntityState.Detached;

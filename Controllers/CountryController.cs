@@ -43,17 +43,20 @@ namespace Web_API_for_Contacts_2._0.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateCountry([FromBody] CreateUpdateCountryDto input)
+        public async Task<ActionResult> CreateCountry([FromBody] CreateUpdateCountryDto input, CancellationToken ct)
         {
-            var existingCountry = await _context.Countries
-                .AnyAsync(c => c.Name.ToLower() == input.Name.ToLower());
+            var exists = await _repo.ExistsAsync(
+                c => c.Name.ToLower() == input.Name.ToLower(),
+                ct
+            );
 
-            if (existingCountry)
+            if (exists)
                 return Conflict(new { message = $"'{input.Name}' already exists." });
 
             var newCountry = _mapper.Map<Country>(input);
-            _context.Countries.Add(newCountry);
-            await _context.SaveChangesAsync();
+
+            await _repo.AddAsync(newCountry, ct);
+            await _uow.SaveChangesAsync(ct);
 
             var dto = _mapper.Map<IdNameDto>(newCountry);
 
@@ -61,27 +64,30 @@ namespace Web_API_for_Contacts_2._0.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateCountry(int id, [FromBody] CreateUpdateCountryDto input)
+        public async Task<ActionResult> UpdateCountry(int id, [FromBody] CreateUpdateCountryDto input, CancellationToken ct)
         {
-            var country = await _context.Countries.FindAsync(id);
+            var country = await _repo.GetByIdAsync(id, asNoTracking: false, ct);
 
-            if (country == null)
+            if (country is null)
                 return NotFound(new { message = $"There is no country with id {id}" });
 
-            var existingCountry = await _context.Countries
-                .AnyAsync(c => c.Id != id && c.Name.ToLower() == input.Name.ToLower());
+            var exists = await _repo.ExistsAsync(
+                c => c.Id != id && c.Name.ToLower() == input.Name.ToLower(),
+                ct
+            );
 
-            if (existingCountry)
+            if (exists)
                 return Conflict(new { message = $"'{input.Name}' already exists." });
 
             country.Name = input.Name;
 
-            await _context.SaveChangesAsync();
+            await _repo.UpdateAsync(country, ct);
+            await _uow.SaveChangesAsync(ct);
 
             return Ok(new { message = $"Country updated successfully with name '{input.Name}'" });
         }
 
-        [HttpDelete("{id:int}")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCountry(int id, CancellationToken ct)
         {
             var exists = await _repo.ExistsAsync(c => c.Id == id, ct);
