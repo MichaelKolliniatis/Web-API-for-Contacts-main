@@ -1,83 +1,78 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using AutoMapper;
+using System.Diagnostics.Metrics;
 using Web_API_for_Contacts_2._0.Data;
-using Web_API_for_Contacts_2._0.Models;
+using Web_API_for_Contacts_2._0.Data.Repositories;
 using Web_API_for_Contacts_2._0.Dtos;
-using AutoMapper.QueryableExtensions;
+using Web_API_for_Contacts_2._0.Models;
 
 namespace Web_API_for_Contacts_2._0.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class HobbyController(ContactsDbContext context, IMapper mapper) : ControllerBase
+    public class HobbyController(IGenericRepository<Hobby> repo, IUnitOfWork uow, ContactsDbContext context, IMapper mapper) : ControllerBase
     {
 
+        private readonly IGenericRepository<Hobby> _repo = repo;
+        private readonly IUnitOfWork _uow = uow;
         private readonly ContactsDbContext _context = context;
         private readonly IMapper _mapper = mapper;
 
         [HttpGet]
-        public async Task<ActionResult<List<IdNameDto>>> GetHobbies()
+        public async Task<ActionResult<List<IdNameDto>>> GetHobbies(CancellationToken ct)
         {
-            var hobbies = await _context.Hobbies
-                .AsNoTracking()
-                .ProjectTo<IdNameDto>(_mapper.ConfigurationProvider)
-                .ToListAsync();
-
-            return Ok(hobbies);
+            var dtos = await _repo.GetAllProjectedAsync<IdNameDto>(_mapper.ConfigurationProvider, ct: ct);
+            return Ok(dtos);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<IdNameDto>> GetHobbyById(int id)
+        public async Task<ActionResult<IdNameDto>> GetHobbyById(int id, CancellationToken ct)
         {
-            var hobby = await _context.Hobbies
-                .AsNoTracking()
-                .Where(h => h.Id == id)
-                .ProjectTo<IdNameDto>(_mapper.ConfigurationProvider)
-                .SingleOrDefaultAsync();
-
-            if (hobby == null)
+            var dto = await _repo.GetByIdProjectedAsync<IdNameDto>(id, _mapper.ConfigurationProvider, ct);
+            if (dto == null)
                 return NotFound(new { message = $"There is no hobby with id {id}" });
 
-            return Ok(hobby);
+            return Ok(dto);
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateHobby([FromBody] CreateUpdateHobbyDto input)
+        public async Task<ActionResult> CreateHobby([FromBody] CreateUpdateHobbyDto input, CancellationToken ct)
         {
-            var existingHobby = await _context.Hobbies
-                .AnyAsync(c => c.Name.ToLower() == input.Name.ToLower());
+            var exists = await _repo.ExistsAsync(c => c.Name.ToLower() == input.Name.ToLower(), ct);
 
-            if (existingHobby)
-                return Conflict(new { message = $"{input.Name} already exists." });
+            if (exists)
+                return Conflict(new { message = $"'{input.Name}' already exists." });
 
             var newHobby = _mapper.Map<Hobby>(input);
-            _context.Hobbies.Add(newHobby);
-            await _context.SaveChangesAsync();
+
+            await _repo.AddAsync(newHobby, ct);
+            await _uow.SaveChangesAsync(ct);
 
             var dto = _mapper.Map<IdNameDto>(newHobby);
 
-            return CreatedAtAction(nameof(GetHobbyById), new {id = newHobby.Id}, dto);
+            return CreatedAtAction(nameof(GetHobbyById), new { id = newHobby.Id }, dto);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateHobby(int id, [FromBody] CreateUpdateHobbyDto input)
+        public async Task<ActionResult> UpdateHobby(int id, [FromBody] CreateUpdateHobbyDto input, CancellationToken ct)
         {
-            var hobby = await _context.Hobbies.FindAsync(id);
+            var hobby = await _repo.GetByIdAsync(id, asNoTracking: false, ct);
 
-            if (hobby == null)
+            if (hobby is null)
                 return NotFound(new { message = $"There is no hobby with id {id}" });
 
-            var existingHobby = await _context.Hobbies
-                .AnyAsync(h => h.Id != id && h.Name.ToLower() == input.Name.ToLower());
+            var exists = await _repo.ExistsAsync(c => c.Id != id && c.Name.ToLower() == input.Name.ToLower(), ct);
 
-            if (existingHobby)
+            if (exists)
                 return Conflict(new { message = $"'{input.Name}' already exists." });
 
             hobby.Name = input.Name;
 
-            await _context.SaveChangesAsync();
+            await _repo.UpdateAsync(hobby, ct);
+            await _uow.SaveChangesAsync(ct);
 
             return Ok(new { message = $"Hobby updated successfully with name '{input.Name}'" });
         }

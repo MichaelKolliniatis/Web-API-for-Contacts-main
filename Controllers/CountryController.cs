@@ -13,11 +13,7 @@ namespace Web_API_for_Contacts_2._0.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CountryController(
-        IGenericRepository<Country> repo,
-        IUnitOfWork uow,
-        ContactsDbContext context, 
-        IMapper mapper) : ControllerBase
+    public class CountryController(IGenericRepository<Country> repo, IUnitOfWork uow, ContactsDbContext context, IMapper mapper) : ControllerBase
     {
 
         private readonly IGenericRepository<Country> _repo = repo;
@@ -45,10 +41,7 @@ namespace Web_API_for_Contacts_2._0.Controllers
         [HttpPost]
         public async Task<ActionResult> CreateCountry([FromBody] CreateUpdateCountryDto input, CancellationToken ct)
         {
-            var exists = await _repo.ExistsAsync(
-                c => c.Name.ToLower() == input.Name.ToLower(),
-                ct
-            );
+            var exists = await _repo.ExistsAsync(c => c.Name.ToLower() == input.Name.ToLower(), ct);
 
             if (exists)
                 return Conflict(new { message = $"'{input.Name}' already exists." });
@@ -71,10 +64,7 @@ namespace Web_API_for_Contacts_2._0.Controllers
             if (country is null)
                 return NotFound(new { message = $"There is no country with id {id}" });
 
-            var exists = await _repo.ExistsAsync(
-                c => c.Id != id && c.Name.ToLower() == input.Name.ToLower(),
-                ct
-            );
+            var exists = await _repo.ExistsAsync(c => c.Id != id && c.Name.ToLower() == input.Name.ToLower(), ct);
 
             if (exists)
                 return Conflict(new { message = $"'{input.Name}' already exists." });
