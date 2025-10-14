@@ -78,21 +78,19 @@ namespace Web_API_for_Contacts_2._0.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteHobby(int id)
+        public async Task<IActionResult> DeleteHobby(int id, CancellationToken ct)
         {
-            var hobby = await _context.Hobbies.FindAsync(id);
-
-            if (hobby == null)
+            var hobby = await _repo.GetByIdAsync(id, asNoTracking: false, ct);
+            if (hobby is null)
                 return NotFound(new { message = $"No hobby with Id {id}." });
 
             var personWithHobby = await _context.PersonHobbies
-                .AnyAsync(p => p.HobbyId == id);
-
+                .AnyAsync(ph => ph.HobbyId == id, ct);
             if (personWithHobby)
                 return Conflict(new { message = $"Cannot delete the hobby '{hobby.Name}' because there is at least one person associated with it." });
 
-            _context.Hobbies.Remove(hobby);
-            await _context.SaveChangesAsync();
+            await _repo.DeleteAsync(hobby, ct);
+            await _uow.SaveChangesAsync(ct);
 
             return NoContent();
         }
