@@ -12,7 +12,12 @@ namespace Web_API_for_Contacts_2._0.Data.Repositories
         Task UpdateAsync(T entity, CancellationToken ct = default);
         Task DeleteAsync(T entity, CancellationToken ct = default);
         Task DeleteByIdAsync(int id, CancellationToken ct = default);
-
         Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default);
+        Task<List<TOut>> SelectWhereAsync<TOut>(
+            Expression<Func<T, bool>> predicate,
+            Expression<Func<T, TOut>> selector,
+            bool asNoTracking = true,
+            CancellationToken ct = default);
+
     }
 }

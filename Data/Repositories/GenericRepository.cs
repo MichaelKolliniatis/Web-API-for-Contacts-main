@@ -83,5 +83,17 @@ namespace Web_API_for_Contacts_2._0.Data.Repositories
         {
             return _set.AnyAsync(predicate, ct);
         }
+
+        public Task<List<TOut>> SelectWhereAsync<TOut>(
+            Expression<Func<T, bool>> predicate,
+            Expression<Func<T, TOut>> selector,
+            bool asNoTracking = true,
+            CancellationToken ct = default)
+        {
+            IQueryable<T> q = _set;
+            if (asNoTracking) q = q.AsNoTracking();
+
+            return q.Where(predicate).Select(selector).ToListAsync(ct);
+        }
     }
 }
