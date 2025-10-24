@@ -17,6 +17,7 @@ public class PersonController(
     IGenericRepository<Country> countries, 
     IGenericRepository<Profession> professions, 
     IGenericRepository<Hobby> hobbies, 
+    IGenericRepository<PersonHobby> personHobbies, 
     IUnitOfWork uow, 
     ContactsDbContext context, 
     IMapper mapper) : ControllerBase
@@ -25,6 +26,7 @@ public class PersonController(
     private readonly IGenericRepository<Country> _countries = countries;
     private readonly IGenericRepository<Profession> _professions = professions;
     private readonly IGenericRepository<Hobby> _hobbies = hobbies;
+    private readonly IGenericRepository<PersonHobby> _personHobbies = personHobbies;
     private readonly IUnitOfWork _uow = uow;
     private readonly ContactsDbContext _context = context;
     private readonly IMapper _mapper = mapper;
@@ -53,67 +55,6 @@ public class PersonController(
 
         return Ok(personDto);
     }
-
-    //[HttpPost]
-    //public async Task<IActionResult> CreatePerson([FromBody] CreateUpdatePersonDto input)
-    //{
-    //    var validationErrors = new List<string>();
-
-    //    if (input.CountryId.HasValue)
-    //    {
-    //        var exists = await _context.Countries.AnyAsync(c => c.Id == input.CountryId.Value);
-    //        if (!exists)
-    //            validationErrors.Add($"No country found with ID = {input.CountryId}");
-    //    }
-
-    //    if (input.ProfessionId.HasValue)
-    //    {
-    //        var exists = await _context.Professions.AnyAsync(p => p.Id == input.ProfessionId.Value);
-    //        if (!exists)
-    //            validationErrors.Add($"No profession found with ID = {input.ProfessionId}");
-    //    }
-
-    //    if (input.HobbyIds != null && input.HobbyIds.Count > 0)
-    //    {
-    //        var hobbyIdSet = input.HobbyIds.ToHashSet();
-
-    //        var existingHobbyIds = await _context.Hobbies
-    //            .Select(h => h.Id)
-    //            .ToListAsync();
-
-    //        existingHobbyIds = existingHobbyIds.Where(id => hobbyIdSet.Contains(id)).ToList();
-
-    //        var invalidHobbyIds = input.HobbyIds.Except(existingHobbyIds).ToList();
-    //        if (invalidHobbyIds.Any())
-    //            validationErrors.Add($"No hobbies found with IDs = {string.Join(", ", invalidHobbyIds)}");
-    //    }
-
-    //    if (validationErrors.Any())
-    //        return NotFound(new { messages = validationErrors });
-
-    //    var person = new Person
-    //    {
-    //        FirstName = input.FirstName,
-    //        LastName = input.LastName,
-    //        Email = input.Email,
-    //        Phone = input.Phone,
-    //        CountryId = input.CountryId,
-    //        ProfessionId = input.ProfessionId,
-    //        PersonHobbies = input.HobbyIds?
-    //            .Select(hobbyId => new PersonHobby { HobbyId = hobbyId })
-    //            .ToList() ?? new List<PersonHobby>()
-    //    };
-
-    //    _context.Persons.Add(person);
-    //    await _context.SaveChangesAsync();
-
-    //    var personDto = await _context.Persons
-    //        .Where(p => p.Id == person.Id)
-    //        .ProjectTo<PersonDto>(_mapper.ConfigurationProvider)
-    //        .FirstOrDefaultAsync();
-
-    //    return CreatedAtAction(nameof(GetPersonById), new { id = person.Id }, personDto);
-    //}
 
     [HttpPost]
     public async Task<IActionResult> CreatePerson([FromBody] CreateUpdatePersonDto input, CancellationToken ct)
@@ -250,19 +191,17 @@ public class PersonController(
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeletePerson(int id)
+    public async Task<IActionResult> DeletePerson(int id, CancellationToken ct)
     {
-        var person = await _context.Persons.FindAsync(id);
-
-        if (person == null)
+        var person = await _personRepo.GetByIdAsync(id, asNoTracking: false, ct);
+        if (person is null)
             return NotFound(new { message = $"No person found with Id {id}." });
 
-        var deletedHobbies = await _context.PersonHobbies
-            .Where(h => h.PersonId == id)
-            .ExecuteDeleteAsync();
+        await _personHobbies.DeleteWhereAsync(ph => ph.PersonId == id, ct);
 
-        _context.Persons.Remove(person);
-        await _context.SaveChangesAsync();
+        await _personRepo.DeleteAsync(person, ct);
+
+        await _uow.SaveChangesAsync(ct);
 
         return NoContent();
     }

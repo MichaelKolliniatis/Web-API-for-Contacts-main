@@ -16,16 +16,7 @@ namespace Web_API_for_Contacts_2._0.Data.Repositories
             _set = context.Set<T>();
         }
 
-        //public async Task<List<T>> GetAllAsync(bool asNoTracking = true, CancellationToken ct = default)
-        //{
-        //    var q = asNoTracking ? _set.AsNoTracking() : _set;
-        //    return await q.ToListAsync(ct);
-        //}
-
-        public async Task<List<TResult>> GetAllProjectedAsync<TResult>(
-            AutoMapper.IConfigurationProvider mapperConfig,
-            bool asNoTracking = true,
-            CancellationToken ct = default)
+        public async Task<List<TResult>> GetAllProjectedAsync<TResult>(AutoMapper.IConfigurationProvider mapperConfig, bool asNoTracking = true, CancellationToken ct = default)
         {
             IQueryable<T> q = _set;
             if (asNoTracking) q = q.AsNoTracking();
@@ -41,10 +32,7 @@ namespace Web_API_for_Contacts_2._0.Data.Repositories
             return entity;
         }
 
-        public async Task<TResult?> GetByIdProjectedAsync<TResult>(
-            int id,
-            AutoMapper.IConfigurationProvider mapperConfig,
-            CancellationToken ct = default)
+        public async Task<TResult?> GetByIdProjectedAsync<TResult>(int id, AutoMapper.IConfigurationProvider mapperConfig, CancellationToken ct = default)
         {
             var dto = await _set
                 .AsNoTracking()
@@ -84,16 +72,16 @@ namespace Web_API_for_Contacts_2._0.Data.Repositories
             return _set.AnyAsync(predicate, ct);
         }
 
-        public Task<List<TOut>> SelectWhereAsync<TOut>(
-            Expression<Func<T, bool>> predicate,
-            Expression<Func<T, TOut>> selector,
-            bool asNoTracking = true,
-            CancellationToken ct = default)
+        public Task<List<TOut>> SelectWhereAsync<TOut>(Expression<Func<T, bool>> predicate, Expression<Func<T, TOut>> selector, bool asNoTracking = true, CancellationToken ct = default)
         {
             IQueryable<T> q = _set;
             if (asNoTracking) q = q.AsNoTracking();
 
             return q.Where(predicate).Select(selector).ToListAsync(ct);
+        }
+        public Task<int> DeleteWhereAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default)
+        {
+            return _set.Where(predicate).ExecuteDeleteAsync(ct);
         }
     }
 }
