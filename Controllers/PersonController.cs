@@ -114,46 +114,40 @@ public class PersonController(
         return CreatedAtAction(nameof(GetPersonById), new { id = person.Id }, personDto);
     }
 
-
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdatePerson(int id, [FromBody] CreateUpdatePersonDto input)
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> UpdatePerson(int id, [FromBody] CreateUpdatePersonDto input, CancellationToken ct)
     {
         var validationErrors = new List<string>();
 
-        var person = await _context.Persons
-            .Include(p => p.PersonHobbies)
-            .FirstOrDefaultAsync(p => p.Id == id);
-
-        if (person == null)
+        var person = await _personRepo.GetByIdAsync(id, asNoTracking: false, ct);
+        if (person is null)
             return NotFound(new { message = $"No person found with ID = {id}" });
 
         if (input.CountryId.HasValue)
         {
-            var exists = await _context.Countries.AnyAsync(c => c.Id == input.CountryId.Value);
-            if (!exists)
+            var countryExists = await _countries.ExistsAsync(c => c.Id == input.CountryId.Value, ct);
+            if (!countryExists)
                 validationErrors.Add($"No country found with ID = {input.CountryId}");
         }
 
         if (input.ProfessionId.HasValue)
         {
-            var exists = await _context.Professions.AnyAsync(p => p.Id == input.ProfessionId.Value);
-            if (!exists)
+            var professionExists = await _professions.ExistsAsync(p => p.Id == input.ProfessionId.Value, ct);
+            if (!professionExists)
                 validationErrors.Add($"No profession found with ID = {input.ProfessionId}");
         }
 
-        if (input.HobbyIds != null && input.HobbyIds.Count > 0)
+        if (input.HobbyIds is { Count: > 0 })
         {
-            var hobbyIdSet = input.HobbyIds.ToHashSet();
+            var ids = input.HobbyIds;
 
-            var existingHobbyIds = await _context.Hobbies
-                .Select(h => h.Id)
-                .ToListAsync();
+            var allHobbyIds = await _hobbies.SelectWhereAsync(
+                h => true,
+                h => h.Id,
+                asNoTracking: true,
+                ct: ct);
 
-            existingHobbyIds = existingHobbyIds
-                .Where(id => hobbyIdSet.Contains(id))
-                .ToList();
-
-            var invalidHobbyIds = input.HobbyIds.Except(existingHobbyIds).ToList();
+            var invalidHobbyIds = ids.Except(allHobbyIds).ToList();
             if (invalidHobbyIds.Any())
                 validationErrors.Add($"No hobbies found with IDs = {string.Join(", ", invalidHobbyIds)}");
         }
@@ -168,24 +162,30 @@ public class PersonController(
         person.CountryId = input.CountryId;
         person.ProfessionId = input.ProfessionId;
 
-        person.PersonHobbies.Clear();
-        if (input.HobbyIds != null && input.HobbyIds.Count > 0)
+        await _personHobbies.DeleteWhereAsync(ph => ph.PersonId == id, ct);
+
+        if (input.HobbyIds is { Count: > 0 })
         {
             person.PersonHobbies = input.HobbyIds
                 .Select(hobbyId => new PersonHobby
                 {
-                    HobbyId = hobbyId,
-                    PersonId = person.Id
+                    PersonId = id,
+                    HobbyId = hobbyId
                 })
                 .ToList();
         }
+        else
+        {
+            person.PersonHobbies = new List<PersonHobby>();
+        }
 
-        await _context.SaveChangesAsync();
+        await _personRepo.UpdateAsync(person, ct);
+        await _uow.SaveChangesAsync(ct);
 
-        var personDto = await _context.Persons
-            .Where(p => p.Id == person.Id)
-            .ProjectTo<PersonDto>(_mapper.ConfigurationProvider)
-            .FirstOrDefaultAsync();
+        var personDto = await _personRepo.GetProjectedByIdAsync(
+            id,
+            _mapper.ConfigurationProvider,
+            ct);
 
         return Ok(personDto);
     }
