@@ -79,7 +79,6 @@ public class PersonController(
         {
             var ids = input.HobbyIds;
 
-            // 1 query: φέρνουμε ΟΛΑ τα Hobby Ids (lookup table = μικρός πίνακας)
             var allHobbyIds = await _hobbies.SelectWhereAsync(
                 h => true,
                 h => h.Id,
